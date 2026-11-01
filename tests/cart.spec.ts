@@ -1,13 +1,13 @@
 
 import { test, expect } from '../fixtures/testFixtures';
 
-test.step('cart page displays its title', async ({ cartPage }) => {
+test('cart page displays its title', async ({ cartPage }) => {
   await cartPage.open();
 
   await expect(cartPage.cartTitle).toBeVisible();
 });
 
-test.step('added product appears in cart', async ({ inventoryPage, cartPage }) => {
+test('added product appears in cart', async ({ inventoryPage, cartPage }) => {
   // Step 1: Open the inventory page
   await inventoryPage.open();
 
