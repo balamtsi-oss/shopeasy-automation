@@ -3,7 +3,7 @@ name: Playwright Automation CI
 on:
   workflow_dispatch:
   schedule:
-    - cron: '50 3 * * *'
+    - cron: '0 4 * * *'
   push:
     branches: [main]
   pull_request:
