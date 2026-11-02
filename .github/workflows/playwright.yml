@@ -2,6 +2,8 @@ name: Playwright Automation CI
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '30 20 * * *'
   push:
     branches: [main]
   pull_request:
