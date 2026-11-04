@@ -1,5 +1,7 @@
 
 import { defineConfig, devices } from '@playwright/test';
+import 'dotenv/config';
+console.log('Jira token loaded:', !!process.env.JIRA_API_TOKEN);
 
 export default defineConfig({
   testDir: './tests',
@@ -8,9 +10,10 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 2 : undefined,
- reporter: [
+reporter: [
   ['html', { open: 'never' }],
-  ['allure-playwright']
+  ['allure-playwright'],
+  ['./JiraReporter.ts']
 ],
   // Shared settings for all projects
   use: {
