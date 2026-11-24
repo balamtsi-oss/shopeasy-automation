@@ -22,7 +22,7 @@ reporter: [
      screenshot: 'only-on-failure',
 
     launchOptions: {
-      slowMo: 3000,
+      slowMo: process.env.CI ? 0 : 3000,
     },
   },
 

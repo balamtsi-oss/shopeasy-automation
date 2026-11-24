@@ -1,15 +1,11 @@
-
 name: Playwright Automation CI
 
 on:
   workflow_dispatch:
-
   schedule:
     - cron: '17 4 * * *'
-
   push:
     branches: [main]
-
   pull_request:
     branches: [main]
 
@@ -37,27 +33,15 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+        run: npx playwright install --with-deps && npx playwright install chrome
 
       - name: Run Playwright tests
         run: npx playwright test --shard=${{ matrix.shard }}/4
 
-
-# name: Playwright Automation CI
-
-# on:
-#   workflow_dispatch:
-#   schedule:
-#     - cron: '17 4 * * *'
-#   push:
-#     branches: [main]
-#   pull_request:
-#     branches: [main]
-
-# jobs:docker : The term 'docker' is not recognized as the name of a cmdlet, function, script file, or operable program. 
-# Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
-# At line:1 char:1
-# + docker build -t shopeasy .
-# + ~~~~~~
-#     + CategoryInfo          : ObjectNotFound: (docker:String) [], CommandNotFoundException
-#     + FullyQualifiedErrorId : CommandNotFoundException
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-shard-${{ matrix.shard }}
+          path: playwright-report/
+          retention-days: 14
