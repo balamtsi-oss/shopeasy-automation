@@ -11,3 +11,6 @@ allure-report/
 allure-results/
 coverage/
 .DS_Store
+.playwright-mcp/
+*.log
+.vscode/

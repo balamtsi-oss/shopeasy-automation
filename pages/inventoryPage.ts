@@ -5,6 +5,7 @@ export class InventoryPage {
   readonly productNames: Locator;
   readonly addToCartButtons: Locator;
   readonly cartBadge: Locator;
+  readonly cartLink: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -13,6 +14,7 @@ export class InventoryPage {
       name: 'Add to cart',
     });
     this.cartBadge = page.locator('.shopping_cart_badge');
+    this.cartLink = page.locator('.shopping_cart_link');
   }
 
   async open() {
@@ -21,6 +23,18 @@ export class InventoryPage {
 
   async addFirstProductToCart() {
     await this.addToCartButtons.first().click();
+  }
+
+  async addProductToCart(productName: string) {
+    await this.page
+      .locator('.inventory_item')
+      .filter({ hasText: productName })
+      .getByRole('button', { name: 'Add to cart' })
+      .click();
+  }
+
+  async clickCart() {
+    await this.cartLink.click();
   }
 
 async isProductVisible(productName: string) {

@@ -17,12 +17,12 @@ reporter: [
 ],
   // Shared settings for all projects
   use: {
-    baseURL: 'https://www.saucedemo.com',
+     baseURL: 'https://www.saucedemo.com',
     trace: 'on-first-retry',
      screenshot: 'only-on-failure',
 
     launchOptions: {
-      slowMo: 2000,
+      slowMo: 3000,
     },
   },
 
@@ -30,6 +30,16 @@ reporter: [
     {
       name: 'setup',
       testMatch: /auth\.setup\.ts/,
+    },
+
+    {
+      name: 'chrome',
+      use: {
+        ...devices['Desktop Chrome'],
+        channel: 'chrome',
+        storageState: 'playwright/.auth/user.json',
+      },
+      dependencies: ['setup'],
     },
 
     {
