@@ -20,18 +20,19 @@ export class CartPage {
     this.checkoutButton = page.locator('[data-test="checkout"]');
   }
 
-  async open() {
+  async open(): Promise<void> {
     await this.page.goto('/cart.html');
   }
 
-  async isProductInCart() {
+  async isProductInCart(): Promise<void> {
     await expect(this.cartItem).toBeVisible();
   }
-  async verifyProductName(productName: string) {
-  await expect(this.cartItemName).toHaveText(productName);
-}
 
-  async clickCheckout() {
+  async verifyProductName(productName: string): Promise<void> {
+    await expect(this.cartItemName).toHaveText(productName);
+  }
+
+  async clickCheckout(): Promise<void> {
     await this.checkoutButton.click();
   }
 }

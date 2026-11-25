@@ -4,3 +4,6 @@ test-results
 allure-results
 allure-report
 .git
+.env
+.env.*
+!.env.example

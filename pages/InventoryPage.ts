@@ -1,4 +1,4 @@
-import { expect, type Page, type Locator } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 export class InventoryPage {
   readonly page: Page;
@@ -17,15 +17,15 @@ export class InventoryPage {
     this.cartLink = page.locator('.shopping_cart_link');
   }
 
-  async open() {
-   await this.page.goto('/inventory.html');
+  async open(): Promise<void> {
+    await this.page.goto('/inventory.html');
   }
 
-  async addFirstProductToCart() {
+  async addFirstProductToCart(): Promise<void> {
     await this.addToCartButtons.first().click();
   }
 
-  async addProductToCart(productName: string) {
+  async addProductToCart(productName: string): Promise<void> {
     await this.page
       .locator('.inventory_item')
       .filter({ hasText: productName })
@@ -33,13 +33,11 @@ export class InventoryPage {
       .click();
   }
 
-  async clickCart() {
+  async clickCart(): Promise<void> {
     await this.cartLink.click();
   }
 
-async isProductVisible(productName: string) {
-  await expect(
-    this.page.getByText(productName, { exact: true })
-  ).toBeVisible();
-}
+  async isProductVisible(productName: string): Promise<void> {
+    await expect(this.page.getByText(productName, { exact: true })).toBeVisible();
+  }
 }
