@@ -4,104 +4,93 @@ import type {
   FullConfig,
   Suite,
   TestCase,
-  TestResult,
 } from '@playwright/test/reporter';
-
-import axios from 'axios';
 import 'dotenv/config';
+import { createJiraClient, getJiraErrorMessage } from './jira-config';
 
 class JiraReporter implements Reporter {
   private suite!: Suite;
+  private jira!: ReturnType<typeof createJiraClient>;
 
-  constructor() {
-    console.log('JiraReporter loaded!');
-  }
-
-  onBegin(config: FullConfig, suite: Suite) {
-    console.log('JiraReporter onBegin triggered!');
+  onBegin(_config: FullConfig, suite: Suite): void {
     this.suite = suite;
+    this.jira = createJiraClient();
   }
 
-  onTestEnd(test: TestCase, result: TestResult) {
-    console.log('Test:', test.title);
-    console.log('Status:', result.status);
-  }
+  async onEnd(): Promise<void> {
+    const failedTests = this.suite
+      .allTests()
+      .filter(test => test.outcome() === 'unexpected');
+    const reported = new Set<string>();
 
-  async onEnd() {
-    console.log('JiraReporter onEnd triggered!');
-
-    try {
-      const allTests = this.suite.allTests();
-
-      console.log('Total tests found:', allTests.length);
-
-      const failedTests = allTests.filter(
-        test => test.outcome() === 'unexpected'
-      );
-
-      console.log('Failed tests found:', failedTests.length);
-
-      for (const test of failedTests) {
-        await this.createJiraBug(test);
+    for (const test of failedTests) {
+      const summary = this.getSummary(test);
+      if (reported.has(summary)) {
+        continue;
       }
-    } catch (error) {
-      console.log('Error inside onEnd:', error);
+      reported.add(summary);
+
+      try {
+        await this.createJiraBug(test, summary);
+      } catch (error: unknown) {
+        console.error(
+          `Could not report failed test "${test.title}" to Jira: ${getJiraErrorMessage(error)}`
+        );
+      }
     }
   }
 
-  async createJiraBug(test: TestCase) {
-    const jiraBaseUrl = process.env.JIRA_BASE_URL!;
-    const jiraEmail = process.env.JIRA_EMAIL!;
-    const jiraToken = process.env.JIRA_API_TOKEN!;
+  private getSummary(test: TestCase): string {
+    return `Playwright failure: ${test.location.file}:${test.location.line} - ${test.title}`.slice(
+      0,
+      255
+    );
+  }
 
-    const auth = Buffer.from(
-      `${jiraEmail}:${jiraToken}`
-    ).toString('base64');
+  private async createJiraBug(test: TestCase, summary: string): Promise<void> {
+    const escapedSummary = summary.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    const jql = `project = "${this.jira.projectKey}" AND summary = "${escapedSummary}"`;
+    const existing = await this.jira.client.get<{ issues: { key: string }[] }>(
+      '/rest/api/3/search/jql',
+      { params: { jql, maxResults: 1, fields: 'key' } }
+    );
+
+    if (existing.data.issues.length > 0) {
+      console.info(
+        `Skipping duplicate Jira issue for "${test.title}": ${existing.data.issues[0].key}`
+      );
+      return;
+    }
 
     const lastResult = test.results[test.results.length - 1];
-    const errorMessage = lastResult?.error?.message || 'Test failed';
-
-    try {
-      const response = await axios.post(
-        `${jiraBaseUrl}/rest/api/3/issue`,
-        {
-          fields: {
-            project: { key: 'SCRUM' },
-            summary: `Playwright Failure: ${test.title}`,
-            description: {
-              type: 'doc',
-              version: 1,
-              content: [
-                {
-                  type: 'paragraph',
-                  content: [
-                    {
-                      type: 'text',
-                      text: `Test: ${test.title}\nError: ${errorMessage}`,
-                    },
-                  ],
-                },
-              ],
-            },
-            issuetype: { name: 'Task' },
+    const errorMessage = lastResult?.error?.message ?? 'Test failed without an error message.';
+    const response = await this.jira.client.post<{ key: string }>(
+      '/rest/api/3/issue',
+      {
+        fields: {
+          project: { key: this.jira.projectKey },
+          summary,
+          description: {
+            type: 'doc',
+            version: 1,
+            content: [
+              {
+                type: 'paragraph',
+                content: [
+                  {
+                    type: 'text',
+                    text: `Test: ${test.title}\nFile: ${test.location.file}:${test.location.line}\nError: ${errorMessage}`,
+                  },
+                ],
+              },
+            ],
           },
+          issuetype: { name: 'Bug' },
         },
-        {
-          headers: {
-            Authorization: `Basic ${auth}`,
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      }
+    );
 
-      console.log(`Jira bug created: ${response.data.key}`);
-    } catch (error: any) {
-      console.log(
-        'Failed to create Jira bug:',
-        error.response?.data || error.message
-      );
-    }
+    console.info(`Jira bug created: ${response.data.key}`);
   }
 }
 

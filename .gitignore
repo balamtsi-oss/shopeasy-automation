@@ -14,3 +14,5 @@ coverage/
 .playwright-mcp/
 *.log
 .vscode/
+.env.*
+!.env.example

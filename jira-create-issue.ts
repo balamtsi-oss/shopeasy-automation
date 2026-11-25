@@ -1,21 +1,14 @@
-import axios from 'axios';
 import 'dotenv/config';
-
-const jiraBaseUrl = process.env.JIRA_BASE_URL;
-const jiraEmail = process.env.JIRA_EMAIL;
-const jiraToken = process.env.JIRA_API_TOKEN;
-
-const auth = Buffer.from(`${jiraEmail}:${jiraToken}`).toString('base64');
+import { createJiraClient, getJiraErrorMessage } from './jira-config';
 
 async function createJiraIssue() {
   try {
-    const response = await axios.post(
-      `${jiraBaseUrl}/rest/api/3/issue`,
+    const { client, projectKey } = createJiraClient();
+    const response = await client.post<{ key: string; id: string }>(
+      '/rest/api/3/issue',
       {
         fields: {
-          project: {
-            key: 'SCRUM',
-          },
+          project: { key: projectKey },
           summary: 'Playwright API Integration Test',
           description: {
             type: 'doc',
@@ -32,28 +25,18 @@ async function createJiraIssue() {
               },
             ],
           },
-          issuetype: {
-            name: 'Task',
-          },
-        },
-      },
-      {
-        headers: {
-          Authorization: `Basic ${auth}`,
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
+          issuetype: { name: 'Task' },
         },
       }
     );
 
-    console.log('Jira issue created successfully!');
-    console.log('Issue Key:', response.data.key);
-    console.log('Issue ID:', response.data.id);
-  } catch (error: any) {
-    console.log('Jira issue creation failed!');
-    console.log('Status:', error.response?.status);
-    console.log('Details:', JSON.stringify(error.response?.data || error.message));
+    console.info('Jira issue created successfully.');
+    console.info('Issue Key:', response.data.key);
+    console.info('Issue ID:', response.data.id);
+  } catch (error: unknown) {
+    console.error('Jira issue creation failed:', getJiraErrorMessage(error));
+    process.exitCode = 1;
   }
 }
 
-createJiraIssue();
+void createJiraIssue();

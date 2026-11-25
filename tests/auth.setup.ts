@@ -1,20 +1,16 @@
 
 import { test as setup, expect } from '@playwright/test';
+import { standardUser } from '../data/users';
+import { LoginPage } from '../pages/LoginPage';
 
 setup('authenticate', async ({ page }) => {
-  await page.goto('https://www.saucedemo.com/');
-
-  await page.locator('#user-name').fill('standard_user');
-  await page.locator('#password').fill('secret_sauce');
-
-  await page.locator('#login-button').click();
-
-  await expect(page).toHaveURL(/inventory/);  
+  const loginPage = new LoginPage(page);
+  await page.goto('/');
+  await loginPage.login(standardUser.username, standardUser.password);
+  await expect(page).toHaveURL(/inventory/);
 
   await page.context().storageState({
     path: 'playwright/.auth/user.json',
   });
-
-
 });
 

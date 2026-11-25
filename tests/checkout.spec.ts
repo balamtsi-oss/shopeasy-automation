@@ -32,5 +32,9 @@ test.describe('Checkout flow', () => {
     // Verify navigation to checkout step two (overview)
     await expect(page).toHaveURL(/checkout-step-two\.html/);
     await expect(checkoutPage.checkoutTitle).toHaveText('Checkout: Overview');
+
+    await checkoutPage.finishOrder();
+    await expect(page).toHaveURL(/checkout-complete\.html/);
+    await expect(checkoutPage.completionMessage).toHaveText('Thank you for your order!');
   });
 });
